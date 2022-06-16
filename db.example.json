@@ -1,0 +1,8 @@
+{
+  "user": "hoge",
+  "password": "fuga",
+  "host": "localhost",
+  "port": "1433",
+  "database": "piyo",
+  "limit": 50
+}
