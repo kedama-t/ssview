@@ -1,4 +1,5 @@
 {
+  "rdb": "sqlserver",
   "user": "hoge",
   "password": "fuga",
   "host": "localhost",

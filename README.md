@@ -43,6 +43,7 @@ In SQL mode, you can execute a sql statement you want.
 db.json is config file to connect SQL Server.
 ```json
 {
+  "rdb": "sqlserver",
   "user": "hoge",
   "password": "fuga",
   "host": "localhost",
@@ -56,3 +57,5 @@ Setting above provides a connection url below.
 ```
 sqlserver://hoge:fuga@localhost:1433?database=piyo
 ```
+
+If you set value "mysql" or "mariadb" on ```rdb```, you can connect to mysql or mariadb with ssview.
