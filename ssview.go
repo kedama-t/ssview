@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	_ "github.com/denisenkom/go-mssqldb"
+	_ "github.com/go-sql-driver/mysql"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -17,36 +19,48 @@ const (
 	sqlmode
 )
 
-func main() {
-	conf, err := ReadConfig()
-	var prompt = [2]string{"table? > ", "sql? > "}
+func connectToDB(conf *Config) (*sql.DB, error) {
+	switch {
+	case conf.Rdb == "sqlserver":
+		// connect to sql server
+		u := &url.URL{
+			Scheme:   "sqlserver",
+			User:     url.UserPassword(conf.User, conf.Password),
+			Host:     conf.Host + ":" + conf.Port,
+			RawQuery: "database=" + conf.Database,
+		}
+		fmt.Println("Connection URL:" + u.String())
+		db, err := sql.Open("sqlserver", u.String())
+		return db, err
+	case conf.Rdb == "mysql" || conf.Rdb == "mariadb":
+		// connect to mysql or mariadb
+		connectionstring := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", conf.User, conf.Password, conf.Host, conf.Port, conf.Database)
+		fmt.Println("Connection String:" + connectionstring)
+		db, err := sql.Open("mysql", connectionstring)
+		return db, err
+	default:
+		return nil, errors.New("undefined rdb.")
+	}
+}
 
+func main() {
+	var prompt = [2]string{"table? > ", "sql? > "}
+	conf, err := ReadConfig()
 	if err != nil {
 		fmt.Println("Reading config file has failed.")
 		fmt.Printf("err: %v\n", err)
 		return
 	}
 
-	// connect to db
-	u := &url.URL{
-		Scheme:   "sqlserver",
-		User:     url.UserPassword(conf.User, conf.Password),
-		Host:     conf.Host + ":" + conf.Port,
-		RawQuery: "database=" + conf.Database,
-	}
-	fmt.Println("Connection URL:" + u.String())
-  
-	db, err := sql.Open("sqlserver", u.String())
+	db, err := connectToDB(conf)
 	if err != nil {
 		fmt.Println("Cannot connect to server.")
-		fmt.Println(u.String())
 		fmt.Printf("err: %v\n", err)
 		return
 	}
+	defer db.Close()
 
-  defer db.Close()
-	
-  var argStatement = flag.String("s", "", "sql statement")
+	var argStatement = flag.String("s", "", "sql statement")
 	flag.Parse()
 	if *argStatement != "" {
 		// single command
@@ -78,11 +92,16 @@ func main() {
 				mode = tablemode
 			default:
 
-			  var query string
+				var query string
 				switch mode {
 				case tablemode:
 					var tableName string = scanner.Text()
-					query = fmt.Sprintf("select top %v * from %s", conf.Limit, tableName)
+					switch {
+					case conf.Rdb == "sqlserver":
+						query = fmt.Sprintf("select top %v * from %s", conf.Limit, tableName)
+					case conf.Rdb == "mysql" || conf.Rdb == "mariadb":
+						query = fmt.Sprintf("select * from %s limit %v", tableName, conf.Limit)
+					}
 				case sqlmode:
 					query = scanner.Text()
 				}
@@ -102,6 +121,7 @@ func main() {
 }
 
 type Config struct {
+	Rdb      string `json:"rdb"`
 	User     string `json:"user"`
 	Password string `json:"password"`
 	Host     string `json:"host"`
