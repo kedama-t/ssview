@@ -27,6 +27,7 @@ func connectToDB(conf *Config) (*sql.DB, error) {
 			Scheme:   "sqlserver",
 			User:     url.UserPassword(conf.User, conf.Password),
 			Host:     conf.Host + ":" + conf.Port,
+			Path:     conf.Instance,
 			RawQuery: "database=" + conf.Database,
 		}
 		fmt.Println("Connection URL:" + u.String())
@@ -125,6 +126,7 @@ type Config struct {
 	User     string `json:"user"`
 	Password string `json:"password"`
 	Host     string `json:"host"`
+	Instance string `json:"instance"`
 	Port     string `json:"port"`
 	Database string `json:"database"`
 	Limit    int    `json:"limit"`
