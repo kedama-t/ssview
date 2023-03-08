@@ -27,10 +27,7 @@ func connectToDB(conf *Config) (*sql.DB, error) {
 			Scheme:   "sqlserver",
 			User:     url.UserPassword(conf.User, conf.Password),
 			Host:     conf.Host + ":" + conf.Port,
-<<<<<<< HEAD
 			Path:     conf.Instance,
-=======
->>>>>>> 6a598ee5b1f0ab76b8d116665fd621f1524dcb77
 			RawQuery: "database=" + conf.Database,
 		}
 		fmt.Println("Connection URL:" + u.String())
